@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=contain" />
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="ico.png">
+  <title>Bug</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #888888;
+      --track-off: #cccccc;
+      --track-on: #ff85a2;
+      --thumb-off: #f4f4f4;
+      --thumb-on: #e6005c;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      tap-highlight-color: transparent !important;
+      -webkit-tap-highlight-color: transparent !important;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      top: calc(env(safe-area-inset-top, 20px) + 10px);
+      gap: 20px;
+      position: relative;
+    }
+
+    /* Counter Display */
+    .counter-board {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-color);
+      letter-spacing: 0.5px;
+      text-transform: capitalize;
+    }
+
+    .counter-value {
+      color: var(--thumb-on);
+      font-size: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .bug-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Toggle Switch Styling */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--track-off);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--thumb-off);
+      transition: transform 0.2s ease, background-color 0.2s ease;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Active / Checked State */
+    input:checked + .slider {
+      background-color: var(--track-on);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+      background-color: var(--thumb-on);
+    }
+
+    .label {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    /* Modern Popup Overlay */
+    .congrats-card {
+      position: fixed;
+      top: 24%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 24px 40px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 1000;
+      text-align: center;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .congrats-card.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Floating Toast Messages */
+    .toast-msg {
+      position: fixed;
+      top: 45%;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(6px);
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      font-size: 15px;
+      font-weight: 600;
+      color: #333333;
+      pointer-events: none;
+      z-index: 900;
+      animation: floatUpFade 2.2s forwards ease-out;
+      white-space: nowrap;
+    }
+
+    .toast-msg.left {
+      left: calc(50% - 280px);
+    }
+
+    .toast-msg.right {
+      right: calc(50% - 280px);
+    }
+
+    @keyframes floatUpFade {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      15% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      75% {
+        opacity: 1;
+        transform: translateY(-25px);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .congrats-card {
+        top: 17%;
+      }
+      .toast-msg.left {
+        left: 4%;
+        top: 25%;
+      }
+      .toast-msg.right {
+        right: 4%;
+        top: 25%;
+      }
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/gh/m00291/others@50dbb4c3731da1b44dce5c380872521b9bf0a237/sudoku/confetti.min.js"></script>
+</head>
+<body>
+
+  <div class="wrapper">
+    <!-- UI Counter -->
+    <div class="counter-board">
+      <span id="attemptCounter" class="counter-value">10</span> attempts remain
+    </div>
+
+    <!-- Switches Container -->
+    <div class="container" id="bugContainer"></div>
+  </div>
+
+  <!-- Modern Overlay -->
+  <div class="congrats-card" id="congratsCard">
+    🎉 Congratulations!
+  </div>
+
+  <script>
+    const container = document.getElementById('bugContainer');
+    const counterDisplay = document.getElementById('attemptCounter');
+    const congratsCard = document.getElementById('congratsCard');
+    
+    const startBugNumber = 415;
+    const totalBugs = 6;
+    const switches = [];
+    let clickAttemptCount = 10;
+    let isFinished = false;
+
+    // 1. Render Bug Switches
+    for (let i = 0; i < totalBugs; i++) {
+      const bugNum = startBugNumber + i;
+      const isInitiallyChecked = (i === 2 || i === 4);
+      const row = document.createElement('div');
+      row.className = 'bug-row';
+
+      row.innerHTML = `
+        <label class="switch">
+          <input type="checkbox" id="bug-${i}" ${isInitiallyChecked ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+        <span class="label">Bug #${bugNum}</span>
+      `;
+
+      container.appendChild(row);
+      
+      const input = row.querySelector('input');
+      switches.push(input);
+
+      // Handle user click attempt
+      input.addEventListener('change', () => {
+        if (isFinished) return;
+
+        clickAttemptCount--;
+        counterDisplay.textContent = clickAttemptCount;
+
+        // Toast Messages Trigger Logic
+        if (clickAttemptCount === 8) {
+          showToast("Good try! 👍🏻", "left");
+        } else if (clickAttemptCount === 6) {
+          showToast("Try again! 💪🏻", "right");
+        } else if (clickAttemptCount === 4) {
+          showToast("Very close! 🔥", "left");
+        } else if (clickAttemptCount === 2) {
+          showToast("Almost there! 🔥🔥🔥", "right");
+        }
+
+        if (clickAttemptCount <= 0) {
+          triggerVictory();
+        } else {
+          triggerRegression(i);
+        }
+      });
+    }
+
+    // Helper to trigger animated float-up toast messages
+    function showToast(text, positionClass) {
+      const toast = document.createElement('div');
+      toast.className = `toast-msg ${positionClass}`;
+      toast.textContent = text;
+      document.body.appendChild(toast);
+
+      // Auto-remove element after animation finishes
+      setTimeout(() => {
+        toast.remove();
+      }, 2200);
+    }
+
+    // 2. Victory Handling after Attempts
+    function triggerVictory() {
+      isFinished = true;
+
+      // Force turn off ALL bugs
+      switches.forEach(sw => sw.checked = false);
+      switches.forEach(sw => sw.disabled = true);
+      // Show Modern Toast Popup
+      congratsCard.classList.add('show');
+
+      // Launch Confetti Explosion
+      let confetti = new Confetti('congratsCard');
+      confetti.setSize(1);
+      confetti.setPower(25);
+      confetti.setFade(false);
+      confetti.destroyTarget(false);
+
+      setTimeout(() => {congratsCard.click();}, 50);
+      setTimeout(() => {congratsCard.click();}, 800);
+      setTimeout(() => {congratsCard.click();}, 1800);
+
+      // delay before transition
+      setTimeout(() => {
+        transition();
+      }, 2000);
+    }
+
+    function triggerRegression(clickedIndex) {
+      const activeIndices = switches
+        .map((sw, idx) => (sw.checked ? idx : null))
+        .filter(idx => idx !== null);
+
+      const otherIndices = switches
+        .map((_, idx) => idx)
+        .filter(idx => idx !== clickedIndex);
+
+      if (activeIndices.length === 0) {
+        const numToRespawn = Math.floor(Math.random() * 3) + 1;
+        shuffleArray(otherIndices);
+
+        for (let i = 0; i < numToRespawn; i++) {
+          const target = otherIndices[i];
+          setTimeout(() => {
+            if (!isFinished) switches[target].checked = true;
+          }, (i + 1) * 120);
+        }
+        return;
+      }
+
+      const numToToggle = Math.floor(Math.random() * 2) + 1;
+      shuffleArray(otherIndices);
+
+      for (let i = 0; i < numToToggle; i++) {
+        const target = otherIndices[i];
+        setTimeout(() => {
+          if (!isFinished) {
+            switches[target].checked = !switches[target].checked;
+            ensureAtLeastOneBug();
+          }
+        }, (i + 1) * 120);
+      }
+    }
+
+    function ensureAtLeastOneBug() {
+      if (isFinished) return;
+      const activeCount = switches.filter(sw => sw.checked).length;
+      if (activeCount === 0) {
+        const randomIndex = Math.floor(Math.random() * switches.length);
+        switches[randomIndex].checked = true;
+      }
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+  </script>
+
+<!-- --- Transition --- -->
+  <script>
+    function transition() {
+      // 1. Setup the main canvas (what the user actually sees)
+      const mainCanvas = document.createElement('canvas');
+      mainCanvas.style.position = 'fixed';
+      mainCanvas.style.top = '0';
+      mainCanvas.style.left = '0';
+      mainCanvas.style.width = '100vw';
+      mainCanvas.style.height = '100vh';
+      mainCanvas.style.zIndex = '999999';
+      mainCanvas.style.pointerEvents = 'all'; // Prevent user from clicking things during transition
+      document.body.appendChild(mainCanvas);
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      mainCanvas.width = W;
+      mainCanvas.height = H;
+      const ctx = mainCanvas.getContext('2d');
+
+      const mobileFontSize = W < 600 ? '1rem' : '3rem';
+
+      // 2. Setup the mask canvas (off-screen, tracks where water has wiped)
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = W;
+      maskCanvas.height = H;
+      const mCtx = maskCanvas.getContext('2d');
+      // Background is transparent initially
+
+      // 3. Configure the water droplets
+      const dropRadius = 25; 
+      const columnWidth = 15; // heavily overlapped to guarantee full coverage without gaps
+      const totalCols = Math.ceil(W / columnWidth);
+      let columns = [];
+      for (let i = 0; i < totalCols; i++) {
+        columns.push(i * columnWidth);
+      }
+
+      // Shuffle columns to randomize where drops spawn
+      for (let i = columns.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [columns[i], columns[j]] = [columns[j], columns[i]];
+      }
+
+      const drops = [];
+      let lastTime = performance.now();
+      const startTime = lastTime;
+      const duration = 6000;    // 6 seconds total before redirect
+      const spawnDuration = 4000; // Finish spawning by 4s so last drops have 2s to fall
+      let colsSpawned = 0;
+
+      function animate(time) {
+        const dt = time - lastTime;
+        lastTime = time;
+        const elapsed = time - startTime;
+
+        // Spawn new drops progressively based on elapsed time
+        const expectedSpawns = Math.floor((elapsed / spawnDuration) * totalCols);
+        while (colsSpawned < expectedSpawns && colsSpawned < totalCols) {
+          drops.push({
+            x: columns[colsSpawned],
+            y: -dropRadius * 2, // Start slightly above screen
+            // Speed ensures drops reach the bottom within ~1.5 seconds of spawning
+            speed: (H / 1500) * (0.8 + Math.random() * 0.4),
+            radius: dropRadius * (0.8 + Math.random() * 0.4),
+            wobbleFreq: 0.01 + Math.random() * 0.02,
+            wobbleAmp: 2 + Math.random() * 5,
+            wobbleOffset: Math.random() * Math.PI * 2
+          });
+          colsSpawned++;
+        }
+
+        // Draw water drops continuously to the offscreen mask to create a "wiped trail"
+        mCtx.fillStyle = 'white';
+        drops.forEach(drop => {
+          drop.y += drop.speed * dt;
+          
+          // Add realistic serpentine wobble to mimic water on glass
+          const currentX = drop.x + Math.sin(drop.y * drop.wobbleFreq + drop.wobbleOffset) * drop.wobbleAmp;
+          // Slight pulsing in size
+          const currentRadius = drop.radius + Math.sin(drop.y * 0.03) * 3;
+
+          mCtx.beginPath();
+          mCtx.arc(currentX, drop.y, currentRadius, 0, Math.PI * 2);
+          mCtx.fill();
+        });
+
+        // Clear main canvas for fresh frame
+        ctx.clearRect(0, 0, W, H);
+
+        // Step A: Draw the target overlay (Light gray background + Loading text)
+        ctx.fillStyle = '#e8e8e8'; // Light gray
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.fillStyle = '#666666';
+        ctx.font = 'bold ' + mobileFontSize + ' "Segoe UI", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.letterSpacing = '5px';
+        ctx.fillText('L o a d i n g . . .', W / 2, H / 2);
+
+        // Step B: Mask it using the water trails!
+        // 'destination-in' means the gray background is ONLY kept where the mask is solid white
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(maskCanvas, 0, 0);
+        
+        // Reset composite operation
+        ctx.globalCompositeOperation = 'source-over';
+
+        // Loop until 6 seconds is up
+        if (elapsed < duration) {
+          requestAnimationFrame(animate);
+        } else {
+          window.location.href = "https://github.com/m00291";
+        }
+      }
+
+      requestAnimationFrame(animate);
+    };
+  </script>
+</body>
+</html>
